@@ -22,6 +22,6 @@ run:
 outputs:
   - name: out
 caches:
-  - path: .gradle/
-  - path: .m2/
+  - path: /root/.gradle/
+  - path: /root/.m2/
 
