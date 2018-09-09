@@ -1,0 +1,19 @@
+---
+resources:
+  - name: scw-repo
+    type: git
+    source:
+      uri: https://github.com/jacopen/springboot-concourse-workshop
+      branch: {{github-branch}}
+
+jobs:
+  - name: unit-test
+    plan:
+      - get: scw-repo
+        trigger: true
+      - task: unit
+        file: pcfdemo/ci/tasks/unit.yml
+        params: &MAVENPARAMS
+          MAVEN_OPTS: {{maven-opts}}
+          MAVEN_CONFIG: {{maven-config}}
+
