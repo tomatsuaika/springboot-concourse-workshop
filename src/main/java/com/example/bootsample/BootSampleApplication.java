@@ -11,7 +11,7 @@ public class BootSampleApplication {
   
   @GetMapping(path = "/") // (2)
   public String hello() {
-      return "Hello world!";
+      return "Hello World!";
   }
   
   @GetMapping(path = "/test") // (2)
