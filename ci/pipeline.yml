@@ -1,26 +1,104 @@
 ---
 resources:
-  - name: scw-repo
-    type: git
-    source:
-      uri: https://github.com/jacopen/springboot-concourse-workshop
-      branch: workshop
-
+- name: scw-repo
+  type: git
+  source:
+    uri: https://github.com/jacopen/springboot-concourse-workshop
+    branch: user07
+- name: cf
+  type: cf
+  source:
+    api: ((cf-api))
+    username: ((cf-username))
+    password: ((cf-password))
+    organization: ((cf-org))
+    space: ((cf-space))
+    skip_cert_check: true
+- name: candidate-release
+  type: s3
+  source:
+    bucket: ((s3-bucket))
+    versioned_file: boot-sample-user07.jar
+    access_key_id: ((s3-access-key))
+    secret_access_key: ((s3-secret-key))
+    region_name: ap-northeast-1
+    endpoint: s3.ap-northeast-1.amazonaws.com
 jobs:
-  - name: unit-test
-    plan:
-      - get: scw-repo
-        trigger: true
-      - task: unit
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: java
-              tag: '8'
-          run:
-            path: bash
-            args:
-            - -c
-            - |
+- name: unit-test
+  public: true
+  plan:
+  - get: scw-repo
+    trigger: true
+  - task: unit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: java
+          tag: '8'
+      inputs:
+      - name: scw-repo
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          ls -al
+          cd scw-repo
+          ./mvnw clean test
+- name: build
+  plan:
+  - get: scw-repo
+    trigger: true
+    passed: [ unit-test ]
+  - task: build
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: java
+          tag: '8'
+      inputs:
+      - name: scw-repo
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          ls -al
+          cd scw-repo
+          ./mvnw clean package
+          cp boot-sample-*.jar ../build/boot-sample-user07.jar
+      outputs:
+      - name: build
+  - put: candidate-release
+    params:
+      file: build/boot-sample-user07.jar
+- name: cf-push
+  plan:
+  - get: candidate-release
+    trigger: true
+    passed: [ build ]
+  - get: scw-repo
+  - task: generate-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: alpine
+      inputs:
+      - name: candidate-release
+      - name: scw-repo
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          find .
+  - put: cf
+    params:
+      manifest: scw-repo/manifest.yml
+      path: candidate-release/user07.jar
