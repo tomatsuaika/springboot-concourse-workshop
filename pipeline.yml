@@ -1,0 +1,95 @@
+---
+resources:
+  - name: candidate-release
+    type: s3
+    source:
+      bucket: ((s3-bucket))
+      versioned_file: boot-sample-user02.jar
+      access_key_id: ((s3-access-key))
+      secret_access_key: ((s3-secret-key))
+      region_name: ap-northeast-1
+      endpoint: s3.ap-northeast-1.amazonaws.com
+
+  - name: scw-repo
+    type: git
+    source:
+      uri: https://github.com/jacopen/springboot-concourse-workshop
+      branch: user02
+  - name: cf
+    type: cf
+    source:
+      api: ((cf-api))
+      username: ((cf-username))
+      password: ((cf-password))
+      organization: ((cf-org))
+      space: ((cf-space))
+      skip_cert_check: true
+
+jobs:
+  - name: unit-test
+    plan:
+      - get: scw-repo
+        trigger: true
+      - task: unit
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: java
+              tag: '8'
+          inputs:
+            - name: scw-repo
+          run:
+            path: bash
+            args:
+            - -c
+            - |
+              cd scw-repo
+              ./mvnw clean test
+
+
+  - name: build-artifact
+    plan:
+    - get: scw-repo
+      trigger: true
+      passed: [unit-test]
+    - task: build-artifact
+      config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: java
+                tag: '8'
+            inputs:
+              - name: scw-repo
+            outputs:
+              - name: build            
+            run:
+              path: bash
+              args:
+              - -c
+              - |
+                cd scw-repo
+                ./mvnw clean package
+                ls -l
+                
+                pwd
+                cp target/boot-sample-*.jar ../build/boot-sample-user02.jar
+                ls target
+                ls ../build 
+    - put: candidate-release
+      params:
+        file: build/boot-sample-user02.jar
+
+  - name: cfpush
+    plan:
+    - get: candidate-release
+      trigger: true
+      passed: [build-artifact]
+    - get: scw-repo
+    - put: cf
+      params:
+        manifest: scw-repo/manifest.yml
+        path: candidate-release/boot-sample-user02.jar

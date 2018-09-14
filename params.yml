@@ -1,0 +1,9 @@
+s3-bucket: springboot-concourse-workshop
+s3-access-key: AKIAIEDRSCPOICXRDA6Q
+s3-secret-key: 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
+cf-api: api.sys.dev.agile-lab.net
+cf-org: test
+cf-space: development
+cf-username: user02
+cf-password: user02
+slack-webhook: https://hooks.slack.com/services/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
