@@ -70,7 +70,7 @@ jobs:
           ls -al
           cd scw-repo
           ./mvnw clean package
-          cp boot-sample-*.jar ../build/boot-sample-user07.jar
+          cp target/boot-sample-*.jar ../build/boot-sample-user07.jar
       outputs:
       - name: build
   - put: candidate-release
@@ -93,7 +93,7 @@ jobs:
       - name: candidate-release
       - name: scw-repo
       run:
-        path: bash
+        path: sh
         args:
         - -c
         - |
@@ -101,4 +101,4 @@ jobs:
   - put: cf
     params:
       manifest: scw-repo/manifest.yml
-      path: candidate-release/user07.jar
+      path: candidate-release/boot-sample-user07.jar
