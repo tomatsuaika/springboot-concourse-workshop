@@ -1,3 +1,6 @@
 ---
-name: kkusama-test
-random-route: true
+- name: user06-javaapp
+  memory: 1G
+  instances: 1
+  path: target/boot-sample-0.0.1-SNAPSHOT.jar
+  random-route: true

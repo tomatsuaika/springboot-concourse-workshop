@@ -14,15 +14,7 @@ resources:
     source:
       uri: https://github.com/jacopen/springboot-concourse-workshop
       branch: user06
-  - name: candidate-release
-    type: s3
-    source:
-      bucket: ((s3-bucket))
-      versioned_file: hoge.jar
-      access_key_id: ((s3-access-key))
-      secret_access_key: ((s3-secret-key))
-      region_name: ap-northeast-1
-      endpoint: s3.ap-northeast-1.amazonaws.com
+
 jobs:
   - name: unit-test
     plan:
@@ -43,8 +35,7 @@ jobs:
             args:
             - -c
             - |
-              cd scw-repo
-              ./mvnw clean test
+              touch hoge.txt
   - name: build-artifact
     plan:
       - get: scw-repo
@@ -60,26 +51,10 @@ jobs:
               tag: '8'
           inputs:
             - name: scw-repo
-          outputs:
-            - name: build
           run:
             path: bash
             args:
             - -c
             - |
-              cd scw-repo
-              ./mvnw clean package
-              cp target/boot-sample-*.jar ../build/hoge.jar
-      - put: candidate-release
-        params:
-          file:  build/hoge.jar
-  - name: cfpush
-    plan:
-    - get: candidate-release
-      trigger: true
-      passed: [build-artifact]
-    - get: scw-repo
-    - put: cf
-      params:
-        manifest: scw-repo/manifest.yml
-        path: candidate-release/hoge.jar
+              touch hoga.txt
+  
